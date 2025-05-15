@@ -56,7 +56,6 @@ class Build(build_ext):
                                '-DPython_EXECUTABLE=' + ex,
                                '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
                 
-                print(cmake_args)
                 if sys.maxsize > 2**32:
                     cmake_args += ['-A', 'x64']
                 build_args += ['--', '/m']
