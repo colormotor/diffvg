@@ -34,17 +34,29 @@ class Build(build_ext):
         if isinstance(ext, CMakeExtension):
             extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
             info = get_paths()
+
+            if platform.system() == "Windows":
+                # change this to fit your python install
+                libdir = "C:\\Users\\micha\\miniforge3\\envs\\venv\\libs\\python310.lib"
+                ex = "C:\\Users\\micha\\miniforge3\\envs\\venv\\python.exe"
+            else:   
+                libdir = get_config_var('LIBDIR')
+
             include_path = info['include']
+
             cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                          '-DPYTHON_LIBRARY=' + get_config_var('LIBDIR'),
-                          '-DPYTHON_INCLUDE_PATH=' + include_path]
+                          '-DPython_LIBRARY=' + libdir,
+                          '-DPython_INCLUDE_DIR=' + include_path]
 
             cfg = 'Debug' if self.debug else 'Release'
             build_args = ['--config', cfg]
 
             if platform.system() == "Windows":
                 cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir),
+                               '-DPython_EXECUTABLE=' + ex,
                                '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{}={}'.format(cfg.upper(), extdir)]
+                
+                print(cmake_args)
                 if sys.maxsize > 2**32:
                     cmake_args += ['-A', 'x64']
                 build_args += ['--', '/m']
