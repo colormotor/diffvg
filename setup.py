@@ -2,7 +2,7 @@
 import os
 import re
 import sys
-import platform
+import platform, sysconfig
 import subprocess
 import importlib
 from sysconfig import get_paths
@@ -42,11 +42,22 @@ class Build(build_ext):
             else:   
                 libdir = get_config_var('LIBDIR')
 
-            include_path = info['include']
+            python_exe = sys.executable
+            python_root = sys.prefix
+            include_path = info['include'] #sysconfig.get_path("include")
 
-            cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                          '-DPython_LIBRARY=' + libdir,
-                          '-DPython_INCLUDE_DIR=' + include_path]
+            cmake_args = [
+                '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+                '-DPython_EXECUTABLE=' + python_exe,
+                '-DPython_ROOT_DIR=' + python_root,
+                '-DPython_INCLUDE_DIR=' + include_path,
+            ]
+
+            # include_path = info['include']
+
+            # cmake_args = ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+            #               '-DPython_LIBRARY=' + libdir,
+            #               '-DPython_INCLUDE_DIR=' + include_path]
 
             cfg = 'Debug' if self.debug else 'Release'
             build_args = ['--config', cfg]
@@ -64,10 +75,46 @@ class Build(build_ext):
                 build_args += ['--', '-j8']
 
             if ext.build_with_cuda:
+                cmake_args += [
+                    '-DDIFFVG_CUDA=1',
+                    '-DCUDAToolkit_ROOT=' + sys.prefix,
+                ]
                 cmake_args += ['-DDIFFVG_CUDA=1']
+
+                # cuda_root = os.environ.get("CUDA_TOOLKIT_ROOT_DIR") or sys.prefix
+                # cuda_target = os.path.join(cuda_root, "targets", "x86_64-linux")
+
+                # cmake_args += [
+                #     "-DCUDA_TOOLKIT_ROOT_DIR=" + cuda_root,
+                # ]
+
+                # nvcc = os.path.join(cuda_root, "bin", "nvcc")
+                # if os.path.exists(nvcc):
+                #     cmake_args += ["-DCUDA_NVCC_EXECUTABLE=" + nvcc]
+
+                # # Prefer the singular cache/input form for old FindCUDA
+                # cuda_include = os.path.join(cuda_target, "include")
+                # if os.path.exists(cuda_include):
+                #     cmake_args += ["-DCUDA_INCLUDE_DIR=" + cuda_include]
+
+                # cudart = os.path.join(cuda_target, "lib", "libcudart.so")
+                # if os.path.exists(cudart):
+                #     cmake_args += ["-DCUDA_CUDART_LIBRARY=" + cudart]
+
+                # print("CUDA root:", cuda_root)
+                # print("nvcc:", nvcc, os.path.exists(nvcc))
+                # print("cuda include:", cuda_include, os.path.exists(cuda_include))
+                # print("cudart:", cudart, os.path.exists(cudart))
+                # print("cmake args:", cmake_args)
+                
+                # cuda_root = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH") or "/usr/local/cuda"
+                # cmake_args += [
+                #     '-DCUDA_TOOLKIT_ROOT_DIR=' + cuda_root,
+                # ]
             else:
                 cmake_args += ['-DDIFFVG_CUDA=0']
 
+                
             env = os.environ.copy()
             env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get('CXXFLAGS', ''),
                                                                   self.distribution.get_version())
