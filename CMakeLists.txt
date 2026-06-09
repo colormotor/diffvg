@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-project(diffvg VERSION 0.0.1 DESCRIPTION "Differentiable Vector Graphics" LANGUAGES CXX CUDA)
+project(diffvg VERSION 0.0.1 DESCRIPTION "Differentiable Vector Graphics" LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -14,10 +14,18 @@ endif()
 find_package(pybind11 CONFIG REQUIRED)
 find_package(Protobuf REQUIRED)
 
-option(DIFFVG_CUDA "Build diffvg with GPU code path?" ON)
+# Check if compiling on macOS to disable CUDA by default
+if(APPLE)
+    option(DIFFVG_CUDA "Build diffvg with GPU code path?" OFF)
+else()
+    option(DIFFVG_CUDA "Build diffvg with GPU code path?" ON)
+endif()
+
+#option(DIFFVG_CUDA "Build diffvg with GPU code path?" ON)
 
 if(DIFFVG_CUDA)
     message(STATUS "Build with CUDA support")
+    enable_language(CUDA)
     find_package(CUDAToolkit 10 REQUIRED)
 else()
     message(STATUS "Build without CUDA support")
